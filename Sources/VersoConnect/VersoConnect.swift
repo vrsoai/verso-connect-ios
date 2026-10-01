@@ -17,7 +17,7 @@ public enum VersoConnect {
     /// Verso API base. Override only for testing against another environment.
     public static var baseURL = URL(string: "https://connect.tryverso.ai")!
 
-    public static let version = "0.1.0"
+    public static let version = "0.1.1"
 
     /// Presents the connect flow modally over `presenter`.
     ///

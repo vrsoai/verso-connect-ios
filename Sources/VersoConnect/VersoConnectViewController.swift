@@ -39,20 +39,37 @@ final class VersoConnectViewController: UIViewController {
         title = "Connect ChatGPT"
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancelTapped))
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: spinner)
+        // Opaque bar in every scroll state, so the buttons never sit on the page.
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        navigationItem.standardAppearance = appearance
+        navigationItem.scrollEdgeAppearance = appearance
+        navigationItem.compactAppearance = appearance
 
         let configuration = WKWebViewConfiguration()
         // Fresh session every time: the user logs into the account they choose now.
         configuration.websiteDataStore = .nonPersistent()
         configuration.allowsInlineMediaPlayback = true
-        webView = WKWebView(frame: view.bounds, configuration: configuration)
-        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
         // Present as Mobile Safari: the provider's sign-in buttons (Google in
         // particular) refuse browsers that identify as embedded web views.
         webView.customUserAgent = Self.safariUserAgent
+        // The page starts right under the (opaque) navigation bar and runs to
+        // the bottom edge; WebKit itself keeps the content clear of the home
+        // indicator. Without this the page is laid out under the bar and the
+        // automatic inset shifts it: Cancel overlaps the top, the bottom hangs.
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
+        NSLayoutConstraint.activate([
+            webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
 
         spinner.startAnimating()
         Task { await begin() }
