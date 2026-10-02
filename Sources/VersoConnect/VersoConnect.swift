@@ -14,10 +14,13 @@ import UIKit
 /// ```
 public enum VersoConnect {
 
-    /// Verso API base. Override only for testing against another environment.
-    public static var baseURL = URL(string: "https://connect.tryverso.ai")!
+    /// Verso API base. By default the SDK talks to the host of the connect
+    /// link itself, so a link minted for a staging environment goes to
+    /// staging without any configuration. Set this to force another host.
+    public static var baseURL = defaultBaseURL
+    static let defaultBaseURL = URL(string: "https://connect.tryverso.ai")!
 
-    public static let version = "0.1.1"
+    public static let version = "0.1.2"
 
     /// Presents the connect flow modally over `presenter`.
     ///
@@ -36,10 +39,21 @@ public enum VersoConnect {
             completion(.failure(.invalidLink))
             return
         }
-        let controller = VersoConnectViewController(token: token, api: VersoAPI(baseURL: baseURL), completion: completion)
+        let api = VersoAPI(baseURL: baseURL == defaultBaseURL ? (origin(of: link) ?? baseURL) : baseURL)
+        let controller = VersoConnectViewController(token: token, api: api, completion: completion)
         let nav = UINavigationController(rootViewController: controller)
         nav.modalPresentationStyle = .fullScreen
         presenter.present(nav, animated: true)
+    }
+
+    /// `scheme://host[:port]` of a link, where its API lives.
+    static func origin(of url: URL) -> URL? {
+        guard let scheme = url.scheme, let host = url.host else { return nil }
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = host
+        components.port = url.port
+        return components.url
     }
 
     /// Async variant of `present(link:from:completion:)`.
